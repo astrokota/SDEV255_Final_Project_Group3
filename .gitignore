@@ -1,7 +1,7 @@
-node_modules/
+**node_modules/
 client/node_modules/
 server/node_modules/
-.env
+*.env
 client/.env
 server/.env
 dist/
