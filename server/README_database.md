@@ -1,4 +1,4 @@
-For database, .env should have this:
+EVERYONE SHOULD CREATE .env FILE IN SERVER FOLDER that has the following section:
 
 PORT=5000
 DB_HOST=localhost
