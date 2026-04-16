@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import CoursesPage from './pages/CoursesPage'
 
 function App() {
   
@@ -23,6 +24,23 @@ function App() {
       console.error("Error fetching database records:", error);
     }
   };
+  //Fetching single course
+  const viewDetails = async (id) => {
+  try {
+    
+    const response = await fetch(`/api/courses/${id}`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      setSelectedCourse(data); 
+    } else {
+      console.error("Course not found on server");
+    }
+  } catch (error) {
+    console.error("Error fetching fresh course details:", error);
+  }
+};
 
   // CREATE AND UPDATE (POST & PUT) 
   const handleSaveCourse = async (e) => {
@@ -65,7 +83,7 @@ function App() {
     if (window.confirm("Are you sure? This removes it from MySQL forever.")) {
       try {
         await fetch(`/api/courses/${id}`, { method: 'DELETE' });
-        fetchCourses(); // Refresh 
+        fetchCourses(); 
       } catch (error) {
         console.error("Error deleting course:", error);
       }
@@ -96,7 +114,7 @@ function App() {
       </nav>
 
       <main className="content">
-        {/* VIEW DETAILS MODE */}
+        {/* DETAILS VIEW  */}
         {selectedCourse ? (
           <div className="details-view">
             <h2>{selectedCourse.course_name}</h2>
@@ -105,14 +123,13 @@ function App() {
               <p><strong>Subject:</strong> {selectedCourse.subject_area}</p>
               <p><strong>Credits:</strong> {selectedCourse.credits}</p>
               <p><strong>Info:</strong> {selectedCourse.description}</p>
-              <button className="back-btn" onClick={() => setSelectedCourse(null)}>Back</button>
+              <button className="back-btn" onClick={() => setSelectedCourse(null)}>Back to List</button>
             </div>
           </div>
         ) : showForm ? (
-          /* CREATE / EDIT FORM MODE */
+          /* FORM MODE */
           <form className="course-form" onSubmit={handleSaveCourse}>
             <h2>{editingCourse ? "Update Record" : "Add New Course"}</h2>
-            
             <input name="course_name" defaultValue={editingCourse?.course_name} placeholder="Name" required />
             <input name="course_number" defaultValue={editingCourse?.course_number} placeholder="BIO101" required />
             <input name="subject_area" defaultValue={editingCourse?.subject_area} placeholder="Subject" required />
@@ -126,23 +143,12 @@ function App() {
           </form>
         ) : (
           /* GRID VIEW MODE */
-          <div className="course-grid">
-            {courses.length === 0 ? (
-              <p>Connecting to database...</p>
-            ) : (
-              courses.map(course => (
-                <div key={course.id} className="course-card">
-                  <h3>{course.course_name}</h3>
-                  <p className="subtitle">{course.subject_area} | {course.credits} Credits</p>
-                  <div className="card-actions">
-                    <button className="view-btn" onClick={() => setSelectedCourse(course)}>Details</button>
-                    <button className="edit-btn" onClick={() => startEdit(course)}>Edit</button>
-                    <button className="delete-btn" onClick={() => deleteCourse(course.id)}>Delete</button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <CoursesPage 
+            courses={courses} 
+            onView={viewDetails} 
+            onEdit={startEdit} 
+            onDelete={deleteCourse} 
+          />
         )}
       </main>
     </div>
