@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 // Get all courses
-exports.getAllCourses = (req, res) => {
+const getAllCourses = (req, res) => {
     const sql = "SELECT * FROM courses";
 
     db.query(sql, (err, results) => {
