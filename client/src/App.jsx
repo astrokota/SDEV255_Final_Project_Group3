@@ -1,156 +1,230 @@
-import { useState, useEffect } from 'react'
-import './App.css'
-import CoursesPage from './pages/CoursesPage'
+import { useEffect, useState } from 'react';
+import CourseCard from './components/CourseCard';
+import CoursesPage from './pages/CoursesPage';
+import './App.css';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function App() {
-  
-  const [courses, setCourses] = useState([]);        
-  const [showForm, setShowForm] = useState(false);    
-  const [selectedCourse, setSelectedCourse] = useState(null); 
-  const [editingCourse, setEditingCourse] = useState(null);  
+  const [courses, setCourses] = useState([]);
+  const [formData, setFormData] = useState({
+    course_name: '',
+    subject_area: '',
+    course_number: '',
+    credits: '',
+    description: '',
+  });
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [view, setView] = useState('list');
 
-  // LOAD DATA ON STARTUP -
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  // Hits the /api/courses route 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/courses');
+      const response = await fetch(`${API_URL}/api/courses`);
       const data = await response.json();
-      setCourses(data); 
+      setCourses(data);
     } catch (error) {
-      console.error("Error fetching database records:", error);
+      console.error('Error fetching courses:', error);
     }
   };
-  //Fetching single course
-  const viewDetails = async (id) => {
-  try {
-    
-    const response = await fetch(`/api/courses/${id}`);
-    
-    if (response.ok) {
-      const data = await response.json();
-      
-      setSelectedCourse(data); 
-    } else {
-      console.error("Course not found on server");
-    }
-  } catch (error) {
-    console.error("Error fetching fresh course details:", error);
-  }
-};
 
-  // CREATE AND UPDATE (POST & PUT) 
-  const handleSaveCourse = async (e) => {
+  const fetchCourseById = async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/api/courses/${id}`);
+      const data = await response.json();
+      setSelectedCourse(data);
+      setView('details');
+    } catch (error) {
+      console.error('Error fetching course details:', error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    
-    // Convert Form data to JSON object for MySQL
-    const courseData = {
-      course_name: formData.get('course_name'),
-      subject_area: formData.get('subject_area'),
-      course_number: formData.get('course_number'),
-      credits: parseInt(formData.get('credits')), 
-      description: formData.get('description'),
-      teacher_id: 1 
-    };
 
     try {
-      // Use PUT if we are editing an existing ID, otherwise use POST
-      const url = editingCourse ? `/api/courses/${editingCourse.id}` : '/api/courses';
       const method = editingCourse ? 'PUT' : 'POST';
+      const url = editingCourse
+        ? `${API_URL}/api/courses/${editingCourse.id}`
+        : `${API_URL}/api/courses`;
 
-      const response = await fetch(url, {
-        method: method,
+      await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(courseData),
+        body: JSON.stringify({
+          ...formData,
+          credits: Number(formData.credits),
+          teacher_id: 1, // temporary (Stage 1)
+        }),
       });
 
-      if (response.ok) {
-        fetchCourses();      // Reload list from DB
-        setShowForm(false);   // Close  form
-        setEditingCourse(null); 
+      setFormData({
+        course_name: '',
+        subject_area: '',
+        course_number: '',
+        credits: '',
+        description: '',
+      });
+      setEditingCourse(null);
+      setView('list');
+      fetchCourses();
+    } catch (error) {
+      console.error('Error saving course:', error);
+    }
+  };
+
+  const handleEdit = (course) => {
+    setFormData({
+      course_name: course.course_name || '',
+      subject_area: course.subject_area || '',
+      course_number: course.course_number || '',
+      credits: course.credits || '',
+      description: course.description || '',
+    });
+    setEditingCourse(course);
+    setView('form');
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await fetch(`${API_URL}/api/courses/${id}`, {
+        method: 'DELETE',
+      });
+      fetchCourses();
+      if (selectedCourse && selectedCourse.id === id) {
+        setSelectedCourse(null);
+        setView('list');
       }
     } catch (error) {
-      console.error("Connection failed during save:", error);
+      console.error('Error deleting course:', error);
     }
   };
 
-  // DELETE 
-  const deleteCourse = async (id) => {
-    if (window.confirm("Are you sure? This removes it from MySQL forever.")) {
-      try {
-        await fetch(`/api/courses/${id}`, { method: 'DELETE' });
-        fetchCourses(); 
-      } catch (error) {
-        console.error("Error deleting course:", error);
-      }
-    }
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
-  // --- NAVIGATION HELPERS ---
-  const startEdit = (course) => {
-    setEditingCourse(course);
-    setShowForm(true);
-    setSelectedCourse(null);
-  };
+  const renderForm = () => (
+    <div className="form-container">
+      <h2>{editingCourse ? 'Edit Course' : 'Add Course'}</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="course_name"
+          placeholder="Course Name"
+          value={formData.course_name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="subject_area"
+          placeholder="Subject Area"
+          value={formData.subject_area}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="course_number"
+          placeholder="Course Number"
+          value={formData.course_number}
+          onChange={handleChange}
+        />
+        <input
+          type="number"
+          name="credits"
+          placeholder="Credits"
+          value={formData.credits}
+          onChange={handleChange}
+          required
+        />
+        <textarea
+          name="description"
+          placeholder="Course Description"
+          value={formData.description}
+          onChange={handleChange}
+          required
+        />
+        <button type="submit">
+          {editingCourse ? 'Update Course' : 'Add Course'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setView('list');
+            setEditingCourse(null);
+            setFormData({
+              course_name: '',
+              subject_area: '',
+              course_number: '',
+              credits: '',
+              description: '',
+            });
+          }}
+        >
+          Cancel
+        </button>
+      </form>
+    </div>
+  );
 
-  const closeForm = () => {
-    setShowForm(false);
-    setEditingCourse(null);
-  };
+  const renderDetails = () => (
+    <div className="details-container">
+      <h2>{selectedCourse.course_name}</h2>
+      <p><strong>Subject Area:</strong> {selectedCourse.subject_area}</p>
+      <p><strong>Course Number:</strong> {selectedCourse.course_number || 'N/A'}</p>
+      <p><strong>Credits:</strong> {selectedCourse.credits}</p>
+      <p><strong>Description:</strong> {selectedCourse.description}</p>
 
-  // UI
+      <button onClick={() => handleEdit(selectedCourse)}>Edit</button>
+      <button onClick={() => handleDelete(selectedCourse.id)}>Delete</button>
+      <button onClick={() => setView('list')}>Back to Courses</button>
+    </div>
+  );
+
   return (
-    <div className="app-container">
+    <div className="app">
       <nav className="navbar">
-        <div className="logo">College Courses Portal</div>
-        <div className="nav-links">
-          <button onClick={() => {setSelectedCourse(null); closeForm()}}>Home</button>
-          <button onClick={() => {setShowForm(true); setSelectedCourse(null); setEditingCourse(null)}}>+ New Course</button>
+        <h1>Course Registration System</h1>
+        <div>
+          <button onClick={() => setView('list')}>All Courses</button>
+          <button
+            onClick={() => {
+              setEditingCourse(null);
+              setFormData({
+                course_name: '',
+                subject_area: '',
+                course_number: '',
+                credits: '',
+                description: '',
+              });
+              setView('form');
+            }}
+          >
+            Add Course
+          </button>
         </div>
       </nav>
 
-      <main className="content">
-        {/* DETAILS VIEW  */}
-        {selectedCourse ? (
-          <div className="details-view">
-            <h2>{selectedCourse.course_name}</h2>
-            <div className="details-card">
-              <p><strong>Code:</strong> {selectedCourse.course_number}</p>
-              <p><strong>Subject:</strong> {selectedCourse.subject_area}</p>
-              <p><strong>Credits:</strong> {selectedCourse.credits}</p>
-              <p><strong>Info:</strong> {selectedCourse.description}</p>
-              <button className="back-btn" onClick={() => setSelectedCourse(null)}>Back to List</button>
-            </div>
-          </div>
-        ) : showForm ? (
-          /* FORM MODE */
-          <form className="course-form" onSubmit={handleSaveCourse}>
-            <h2>{editingCourse ? "Update Record" : "Add New Course"}</h2>
-            <input name="course_name" defaultValue={editingCourse?.course_name} placeholder="Name" required />
-            <input name="course_number" defaultValue={editingCourse?.course_number} placeholder="BIO101" required />
-            <input name="subject_area" defaultValue={editingCourse?.subject_area} placeholder="Subject" required />
-            <input name="credits" type="number" defaultValue={editingCourse?.credits} placeholder="Credits" required />
-            <textarea name="description" defaultValue={editingCourse?.description} placeholder="Description" required></textarea>
-            
-            <div className="form-buttons">
-              <button type="submit" className="save-btn">{editingCourse ? "Update" : "Save"}</button>
-              <button type="button" className="cancel-btn" onClick={closeForm}>Cancel</button>
-            </div>
-          </form>
-        ) : (
-          /* GRID VIEW MODE */
-          <CoursesPage 
-            courses={courses} 
-            onView={viewDetails} 
-            onEdit={startEdit} 
-            onDelete={deleteCourse} 
-          />
-        )}
-      </main>
+      {view === 'list' && (
+        <CoursesPage
+          courses={courses}
+          onDetails={fetchCourseById}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
+
+      {view === 'form' && renderForm()}
+      {view === 'details' && selectedCourse && renderDetails()}
     </div>
   );
 }
