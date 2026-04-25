@@ -1,5 +1,28 @@
 const db = require('../config/db');
 
+function isNonEmptyString(value) {
+    return typeof value === "string" && value.trim().length > 0;
+}
+
+function parsePositiveInt(value) {
+    const n = Number(value);
+    if (!Number.isInteger(n) || n <= 0) return null;
+    return n;
+}
+
+function validateCoursePayload(body) {
+    const errors = {};
+
+    if (!isNonEmptyString(body.course_name)) errors.course_name = "course_name is required";
+    if (!isNonEmptyString(body.description)) errors.description = "description is required";
+    if (!isNonEmptyString(body.subject_area)) errors.subject_area = "subject_area is required";
+
+    const credits = parsePositiveInt(body.credits);
+    if (credits === null) errors.credits = "credits must be a positive integer";
+
+    return { ok: Object.keys(errors).length === 0, errors, credits };
+}
+
 // Get all courses
 const getAllCourses = (req, res) => {
     const sql = "SELECT * FROM courses";
@@ -17,9 +40,13 @@ const getAllCourses = (req, res) => {
 // Get one course by ID
 const getCourseById = (req, res) => {
     const {id} = req.params;
+    const courseId = parsePositiveInt(id);
+    if (courseId === null) {
+        return res.status(400).json({ error: "Invalid course id" });
+    }
     const sql = "SELECT * FROM courses WHERE id = ?";
 
-    db.query(sql, [id], (err, results) => {
+    db.query(sql, [courseId], (err, results) => {
         if (err) {
             console.error("Error fetching course:", err);
             return res.status(500).json({ error: "Failed to fetch course" });
@@ -44,15 +71,26 @@ const createCourse = (req, res) => {
         teacher_id,
     } = req.body;
 
-    if (!course_name || !description || !subject_area || !credits) {
-        return res.status(400).json({ error: "Please provide all required fields." });
+    const validation = validateCoursePayload(req.body);
+    if (!validation.ok) {
+        return res.status(400).json({
+            error: "Invalid course data",
+            fields: validation.errors,
+        });
     }
 
     const sql = "INSERT INTO courses (course_name, description, subject_area, credits, course_number, teacher_id) VALUES (?, ?, ?, ?, ?, ?)";
 
     db.query(
         sql,
-        [course_name, description, subject_area, credits, course_number || null, teacher_id || null],
+        [
+            course_name.trim(),
+            description.trim(),
+            subject_area.trim(),
+            validation.credits,
+            course_number || null,
+            teacher_id || null,
+        ],
         (err, results) => {
             if (err) {
                 console.error("Error creating course:", err);
@@ -67,6 +105,10 @@ const createCourse = (req, res) => {
 //PUT update course
 const updateCourse = (req, res) => {
     const {id} = req.params;
+    const courseId = parsePositiveInt(id);
+    if (courseId === null) {
+        return res.status(400).json({ error: "Invalid course id" });
+    }
     const {
         course_name,
         description,
@@ -75,11 +117,26 @@ const updateCourse = (req, res) => {
         course_number,
     } = req.body;
 
+    const validation = validateCoursePayload(req.body);
+    if (!validation.ok) {
+        return res.status(400).json({
+            error: "Invalid course data",
+            fields: validation.errors,
+        });
+    }
+
     const sql = "UPDATE courses SET course_name = ?, description = ?, subject_area = ?, credits = ?, course_number = ? WHERE id = ?";
 
     db.query(
         sql,
-        [course_name, description, subject_area, credits, course_number || null, id],
+        [
+            course_name.trim(),
+            description.trim(),
+            subject_area.trim(),
+            validation.credits,
+            course_number || null,
+            courseId,
+        ],
         (err, results) => {
             if (err) {
                 console.error("Error updating course:", err);
@@ -98,9 +155,13 @@ const updateCourse = (req, res) => {
 //DELETE course
 const deleteCourse = (req, res) => {
     const {id} = req.params;
+    const courseId = parsePositiveInt(id);
+    if (courseId === null) {
+        return res.status(400).json({ error: "Invalid course id" });
+    }
     const sql = "DELETE FROM courses WHERE id = ?";
 
-    db.query(sql, [id], (err, results) => {
+    db.query(sql, [courseId], (err, results) => {
         if (err) {
             console.error("Error deleting course:", err);
             return res.status(500).json({ error: "Failed to delete course" });
