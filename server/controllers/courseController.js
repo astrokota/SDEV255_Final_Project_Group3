@@ -25,16 +25,24 @@ function validateCoursePayload(body) {
 
 // Get all courses
 const getAllCourses = (req, res) => {
-    const sql = "SELECT * FROM courses";
+  const { search } = req.query;
 
-    db.query(sql, (err, results) => {
-        if (err) {
-            console.error("Error fetching courses:", err);
-            return res.status(500).json({ error: "Failed to fetch courses" });
-        }
+  let sql = "SELECT * FROM courses";
+  let params = [];
 
-        res.status(200).json(results);
-    });
+  if (search && search.trim() !== "") {
+    sql += " WHERE course_name LIKE ? OR course_number LIKE ?";
+    params = [`%${search.trim()}%`, `%${search.trim()}%`];
+  }
+
+  db.query(sql, params, (err, results) => {
+    if (err) {
+      console.error("Error fetching courses:", err);
+      return res.status(500).json({ error: "Failed to fetch courses" });
+    }
+
+    res.status(200).json(results);
+  });
 };
 
 // Get one course by ID
@@ -68,7 +76,6 @@ const createCourse = (req, res) => {
         subject_area,
         credits,
         course_number,
-        teacher_id,
     } = req.body;
 
     const validation = validateCoursePayload(req.body);
@@ -89,7 +96,7 @@ const createCourse = (req, res) => {
             subject_area.trim(),
             validation.credits,
             course_number || null,
-            teacher_id || null,
+            req.user.id,
         ],
         (err, results) => {
             if (err) {
