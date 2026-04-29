@@ -21,9 +21,11 @@
   "homepage": "https://github.com/astrokota/SDEV255_Final_Project_Group3#readme",
   "dependencies": {
     "@vitejs/plugin-react": "^6.0.1",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.22.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
