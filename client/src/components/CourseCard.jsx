@@ -1,24 +1,27 @@
-import React from 'react';
-
-const CourseCard = ({ course, onView, onEdit, onDelete }) => {
+const CourseCard = ({ course, onDetails, onEdit, onDelete, onEnroll, userRole }) => {
   return (
     <div className="course-card">
       <h3>{course.course_name}</h3>
-      <p className="subtitle">
-        {course.subject_area} | {course.credits} Credits
-      </p>
-      <div className="card-actions">
+      <p>{course.subject_area} | {course.credits} Credits</p>
       
-        <button className="view-btn" onClick={() => onView(course.id)}>
-          Details
-        </button>
-        <button className="edit-btn" onClick={() => onEdit(course)}>
-          Edit
-        </button>
-        <button className="delete-btn" onClick={() => onDelete(course.id)}>
-          Delete
-        </button>
-      </div>
+      <div className="card-actions">
+  <button onClick={() => onDetails(course.id)}>View Details</button>
+
+  {/* Only shows if userRole is exactly 'student' */}
+  {userRole === 'student' && (
+    <button className="enroll-btn" onClick={() => onEnroll(course.id)}>
+      Add to My Schedule
+    </button>
+  )}
+
+  {/* Only shows if userRole is exactly 'teacher' */}
+  {userRole === 'teacher' && (
+    <>
+      <button className="edit-btn" onClick={() => onEdit(course)}>Edit</button>
+      <button className="delete-btn" onClick={() => onDelete(course.id)}>Delete Course</button>
+    </>
+  )}
+</div>
     </div>
   );
 };
