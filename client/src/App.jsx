@@ -33,13 +33,20 @@ function App() {
     }
   }, [token]);
 
-  const fetchCourses = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/courses`, { headers: getAuthHeaders() });
-      const data = await response.json();
-      setCourses(data);
-    } catch (error) { console.error('Error fetching courses:', error); }
-  };
+  const fetchCourses = async (searchTerm = '') => {
+  try {
+    
+    const url = searchTerm 
+      ? `${API_URL}/api/courses?search=${encodeURIComponent(searchTerm)}`
+      : `${API_URL}/api/courses`;
+
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    const data = await response.json();
+    setCourses(data);
+  } catch (error) { 
+    console.error('Error fetching courses:', error); 
+  }
+};
 
   const fetchCourseById = async (id) => {
     try {
@@ -200,6 +207,7 @@ function App() {
                 onEdit={handleEdit} 
                 onDelete={handleDelete} 
                 onEnroll={handleEnroll} 
+                onSearch={fetchCourses}
                 userRole={role} 
               />
             )}
