@@ -50,66 +50,73 @@ const LoginPage = () => {
   if (!selectedRole) {
     return (
       <div className="login-container">
-        <h2>Welcome to Course Registration</h2>
-        <p>Please select your role to continue:</p>
-        <div className="role-buttons">
-          <button className="role-btn" onClick={() => setSelectedRole('student')}>
-            I am a Student
-          </button>
-          <button className="role-btn" onClick={() => setSelectedRole('teacher')}>
-            I am a Teacher
-          </button>
+        <div className="login-card"> 
+          <h2>Welcome to Course Registration</h2>
+          <p>Please select your role to continue:</p>
+          
+          <div className="role-selection" style={{ flexDirection: 'column', display: 'flex', gap: '15px' }}>
+            <button className="login-submit-btn" onClick={() => setSelectedRole('student')}>
+              I am a Student
+            </button>
+            <button 
+              className="login-submit-btn" 
+              style={{ backgroundColor: 'var(--primary-color)' }} 
+              onClick={() => setSelectedRole('teacher')}
+            >
+              I am a Teacher
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   // STAGE 2: Email/Password Form
-  return (
+return (
     <div className="login-container">
-      <h2>{selectedRole === 'teacher' ? 'Teacher Login' : 'Student Login'}</h2>
-      
-      {error && <p className="error-message" style={{ color: 'red' }}>{error}</p>}
-      
-      <form onSubmit={handleLogin} className="login-form">
-        <div className="input-group">
-          <label>Email</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            placeholder="example@college.edu" 
-            required 
-          />
-        </div>
+      <div className="login-card"> {/* THIS WRAPPER IS KEY */}
+        <h2>{selectedRole === 'teacher' ? 'Teacher Login' : 'Student Login'}</h2>
         
-        <div className="input-group">
-          <label>Password</label>
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            placeholder="Enter password" 
-            required 
-          />
-        </div>
+        {error && <p className="error-message">{error}</p>}
+        
+        <form onSubmit={handleLogin} className="login-form">
+          <div className="form-group">
+            <label>Email</label>
+            <input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              placeholder="example@college.edu" 
+              required 
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Password</label>
+            <input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="Enter password" 
+              required 
+            />
+          </div>
 
-        <button type="submit" className="login-submit-btn">Sign In</button>
-        
-        <button 
-          type="button" 
-          className="back-btn" 
-          onClick={() => {
-            setSelectedRole(null);
-            setError('');
-          }}
-          style={{ marginTop: '10px', background: 'none', border: 'none', color: 'blue', cursor: 'pointer' }}
-        >
-          ← Back to role selection
-        </button>
-      </form>
+          <button type="submit" className="login-submit-btn">Sign In</button>
+          
+          <button 
+            type="button" 
+            className="back-btn" 
+            onClick={() => {
+              setSelectedRole(null);
+              setError('');
+            }}
+          >
+            ← Back to role selection
+          </button>
+        </form>
+      </div>
     </div>
-  );
+  )
 };
-
 export default LoginPage;
